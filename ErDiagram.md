@@ -1,6 +1,6 @@
-#ER Diagram — SmartMed
+**ER Diagram — SmartMed**
 
-##Overview
+**Overview**
 
 This Entity-Relationship diagram represents the database schema for SmartMed, an AI-powered health report management platform designed to support patients, doctors, and administrators through structured medical data workflows.
 
@@ -20,6 +20,7 @@ The schema models:
 The system is designed following real-world healthcare workflow modeling and scalable backend design principles.
 
 erDiagram
+```mermaid
 
     USERS {
         uuid id PK
@@ -116,6 +117,7 @@ erDiagram
 
     USERS ||--o{ NOTIFICATIONS : "receives"
     USERS ||--o{ AUDIT_LOGS : "generates"
+```
 
 Table Summary
 

@@ -18,9 +18,9 @@ The schema models:
 
 
 The system is designed following real-world healthcare workflow modeling and scalable backend design principles.
-
-erDiagram
 ```mermaid
+erDiagram
+
 
     USERS {
         uuid id PK

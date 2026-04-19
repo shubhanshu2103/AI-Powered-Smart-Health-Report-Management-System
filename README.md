@@ -1,25 +1,31 @@
 # SmartMed — AI-Powered Health Report & Prescription Management System
 
-SmartMed is a full-stack healthcare management platform designed to centralize medical reports, prescriptions, and patient-doctor workflows using a scalable backend architecture and AI-powered summarization.
+> **SESD Full-Stack Project — Final Submission**
 
-The system focuses heavily on backend engineering principles, structured data modeling, and real-world healthcare workflow simulation.
+## 🌐 Live Deployment
+
+| | URL |
+|---|---|
+| **Frontend (Vercel)** | https://ai-powered-smart-health-report-mana-orcin.vercel.app |
+| **Backend API (Render)** | https://ai-powered-smart-health-report.onrender.com |
 
 ---
 
 ## Overview
 
+SmartMed is a full-stack healthcare management platform that centralizes medical reports, prescriptions, and patient-doctor workflows using a scalable backend architecture and AI-powered summarization.
+
 Healthcare data is often fragmented and difficult to manage. Patients struggle to interpret medical reports, while doctors lack structured longitudinal patient records across visits.
 
 SmartMed solves this by providing:
 
-- Centralized medical report storage
-- AI-generated simplified summaries
+- Centralized medical report storage (Supabase Storage)
+- AI-generated simplified summaries (Groq — Llama 3.3 70B + Llama 4 Scout Vision)
+- JPEG/PNG medical image report processing via vision AI
 - Digital prescription management
 - Medication tracking
-- Role-based dashboards
+- Role-based dashboards (Patient / Doctor / Admin)
 - Audit logging for transparency
-
-This project is built as part of a Software Engineering & System Design (SESD) full-stack milestone, with a backend-first architecture focus.
 
 ---
 
@@ -27,12 +33,12 @@ This project is built as part of a Software Engineering & System Design (SESD) f
 
 SmartMed follows a layered backend architecture:
 
-- Controller Layer — Handles HTTP requests & responses
-- Service Layer — Business logic implementation
-- Repository Layer — Database abstraction
-- Middleware Layer — Authentication & validation
-- Utility Layer — Shared helpers
-- Configuration Layer — Environment & DB setup
+- **Controller Layer** — Handles HTTP requests & responses
+- **Service Layer** — Business logic implementation
+- **Repository Layer** — Database abstraction (Supabase)
+- **Middleware Layer** — JWT Authentication & RBAC
+- **Utility Layer** — Shared helpers
+- **Configuration Layer** — Environment & DB setup
 
 Design principles used:
 
@@ -48,19 +54,19 @@ Design principles used:
 ## Tech Stack
 
 ### Backend (75% Focus)
-- Node.js
-- Express.js
-- PostgreSQL / MySQL
+- Node.js + Express.js
+- Supabase (PostgreSQL) — database & file storage
 - JWT Authentication
 - RESTful API Design
 
 ### Frontend (25%)
-- React.js
+- React.js (Vite)
 - Tailwind CSS
 - Axios
 
 ### AI Integration
-- OpenAI API (Medical report summarization)
+- **Groq API** — `llama-3.3-70b-versatile` for text report summarization
+- **Groq Vision** — `meta-llama/llama-4-scout-17b-16e-instruct` for JPEG/PNG medical image reports
 
 ---
 
@@ -68,49 +74,48 @@ Design principles used:
 
 ### Authentication & Authorization
 - Secure user registration & login
-- Role-based access (ADMIN | DOCTOR | PATIENT)
-- JWT-based authentication
-- Password hashing
+- Role-based access: `ADMIN | DOCTOR | PATIENT`
+- JWT-based authentication with bcrypt password hashing
 
 ### Medical Report Management
-- Upload medical reports
-- Store structured report data
-- Extract text content
-- Generate AI-based summaries
+- Upload medical reports (PDF, TXT, JPEG, PNG)
+- **Vision AI** — reads and summarizes photo/scanned reports
+- AI-generated patient-friendly summaries stored in Supabase
+- Files stored in Supabase Storage (persistent cloud storage)
 
 ### Prescription Workflow
-- Doctor creates prescription
-- Add multiple medications
-- Track dosage and duration
-- Maintain treatment history
+- Doctor views all patient reports in tabulated format with AI summaries
+- One-click "Write Rx" auto-fills patient info into prescription form
+- Add multiple medications with dosage, frequency, duration
+- Maintain full treatment history
 
 ### Notification System
 - Report completion alerts
 - Medication reminders
-- System notifications
+- System notifications with read/unread tracking
 
 ### Audit Logging
-- Track sensitive system actions
-- Maintain transparency
-- Enable traceability
+- Track sensitive system actions (login, report upload, prescription creation)
+- Viewable by Admin with full audit trail
 
 ---
 
 ## Database Design
 
-The system uses a normalized relational schema with:
+Normalized relational schema on Supabase (PostgreSQL):
 
-- UUID-based primary keys
-- ENUM constraints
-- Strict foreign key relationships
-- Indexed lookup fields
-- Audit log tracking
+| Table | Description |
+|---|---|
+| `users` | All platform users with role enum |
+| `doctor_profiles` | Doctor specialization & license |
+| `patient_profiles` | Patient demographics & medical history |
+| `reports` | Uploaded reports + AI summaries |
+| `prescriptions` | Doctor-issued prescriptions |
+| `medications` | Medications under each prescription |
+| `notifications` | Alerts and reminders |
+| `audit_logs` | System activity log |
 
-Refer to:
-- `ErDiagram.md`
-- `classDiagram.md`
-- `sequenceDiagram.md`
-- `useCaseDiagram.md`
+Refer to: `ErDiagram.md`, `classDiagram.md`, `sequenceDiagram.md`, `useCaseDiagram.md`
 
 ---
 
@@ -118,42 +123,47 @@ Refer to:
 
 ```
 SmartMed/
+├── backend/
+│   ├── server.js
+│   ├── render.yaml
+│   └── src/
+│       ├── config/         # Supabase singleton client
+│       ├── repositories/   # Data access layer
+│       ├── services/       # Business logic + AI + Storage
+│       ├── controllers/    # Thin HTTP handlers
+│       ├── routes/         # auth, reports, prescriptions, notifications, admin
+│       └── middleware/     # JWT auth, RBAC, multer
 │
-├── idea.md
+├── frontend/
+│   ├── vercel.json
+│   └── src/
+│       ├── api/            # Axios with JWT interceptor
+│       ├── context/        # Auth context
+│       ├── components/     # Navbar, PrivateRoute
+│       └── pages/          # Login, Register, Dashboards, Reports, Prescriptions
+│
 ├── ErDiagram.md
 ├── classDiagram.md
 ├── sequenceDiagram.md
-├── useCaseDiagram.md
-│
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── services/
-│   │   ├── repositories/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── middleware/
-│   │   ├── utils/
-│   │   └── config/
-│   └── server.js
-│
-├── frontend/
-│   ├── src/
-│   └── public/
-│
-└── README.md
+└── useCaseDiagram.md
 ```
 
 ---
 
-## Setup Instructions
+## Local Setup
+
+### Prerequisites
+- Node.js 18+
+- Supabase project (free tier)
+- Groq API key (free tier)
 
 ### Backend
 
 ```bash
 cd backend
+cp .env.example .env   # fill in SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GROQ_API_KEY, JWT_SECRET
 npm install
-npm run dev
+node server.js         # runs on :4000
 ```
 
 ### Frontend
@@ -161,42 +171,31 @@ npm run dev
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev            # runs on :5173, proxies /api → :4000
 ```
 
----
-
-## Security Considerations
-
-- Passwords are hashed before storage
-- JWT tokens are validated via middleware
-- Role-based route protection
-- Foreign key constraints enforce relational integrity
-- Audit logs track sensitive operations
+### Database
+Run `backend/src/models/schema.sql` in your **Supabase → SQL Editor**.
 
 ---
 
-## Future Enhancements
+## Security
 
-- Cloud file storage integration (AWS S3)
-- Real-time medication reminders
-- Doctor analytics dashboard
-- Appointment scheduling
-- Multi-hospital support
+- Passwords hashed with bcryptjs (salt rounds: 12)
+- JWT tokens validated on every protected route
+- Role-based route protection (RBAC middleware)
+- Supabase service role key used server-side only (never exposed to frontend)
+- Medical files stored in Supabase Storage (cloud-persistent, not local disk)
 
 ---
 
 ## Academic Context
 
-This project is developed for the SESD Full-Stack Project Milestone.
+Developed for the **SESD Full-Stack Project Milestone**.
 
-Evaluation Focus:
-- Backend Design (75%)
-- Frontend Implementation (25%)
-- OOP Principles
-- Clean Architecture
-- System Design Practices
-- Proper Git Workflow
+| Focus Area | Weight |
+|---|---|
+| Backend Design & Architecture | 75% |
+| Frontend Implementation | 25% |
 
----
-
+Key evaluation areas: OOP Principles · Clean Architecture · System Design · Git Workflow

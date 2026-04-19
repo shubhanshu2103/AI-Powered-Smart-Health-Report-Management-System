@@ -24,7 +24,7 @@ class ReportService {
   async _processAsync(reportId, patientProfile, userId, filePath, fileName) {
     try {
       const extractedText = filePath ? await aiService.extractText(filePath) : (fileName || '');
-      const aiSummary = await aiService.generateSummary(extractedText || fileName || 'Medical report uploaded.');
+      const aiSummary = await aiService.generateSummary(extractedText || fileName || 'Medical report uploaded.', filePath);
 
       await reportRepo.updateStatus(reportId, 'COMPLETED', extractedText, aiSummary);
 

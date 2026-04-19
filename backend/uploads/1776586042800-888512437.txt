@@ -1,0 +1,6 @@
+Patient: Alice Patient
+Date: 2026-04-19
+Diagnosis: Mild hypertension with borderline elevated LDL cholesterol.
+Blood Pressure: 145/92 mmHg
+Cholesterol: 215 mg/dL
+Recommendation: Dietary changes, reduce sodium intake, moderate exercise 30 min/day. Follow up in 3 months. No medication required at this stage.

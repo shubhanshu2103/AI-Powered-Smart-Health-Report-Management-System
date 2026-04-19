@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "smartmed-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "/Users/apple/Downloads/AI-Powered-Smart-Health-Report-Management-System/frontend",
+      "port": 5173
+    }
+  ]
+}

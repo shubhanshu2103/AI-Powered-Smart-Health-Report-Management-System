@@ -1,79 +1,69 @@
 const Groq = require('groq-sdk');
-const fs = require('fs');
 const path = require('path');
+const { downloadBuffer } = require('./storageService');
 
 const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
 const TEXT_EXTS  = new Set(['.txt', '.md', '.csv']);
+
+function extOf(url) {
+  return path.extname(url.split('?')[0]).toLowerCase();
+}
 
 class AIService {
   constructor() {
     this.client = new Groq({ apiKey: process.env.GROQ_API_KEY });
   }
 
-  _isImage(filePath) {
-    return IMAGE_EXTS.has(path.extname(filePath).toLowerCase());
-  }
-
-  async extractText(filePath) {
-    if (!filePath || !fs.existsSync(filePath)) return '';
-    if (this._isImage(filePath)) return '';          // images go through vision directly
-    if (TEXT_EXTS.has(path.extname(filePath).toLowerCase())) {
-      return fs.readFileSync(filePath, 'utf8');
-    }
-    return '';
-  }
-
-  async generateSummary(extractedText, filePath) {
+  async generateSummary(fileUrl, mimeType) {
     const noKey = !process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'gsk_...';
+    const ext = extOf(fileUrl);
 
-    // ── Image path: Groq vision model ──────────────────────────────────
-    if (filePath && this._isImage(filePath)) {
-      if (noKey) return '[Vision AI] Image report received — configure GROQ_API_KEY to enable summarization.';
-
-      const imageBuffer = fs.readFileSync(filePath);
-      const base64 = imageBuffer.toString('base64');
-      const ext = path.extname(filePath).toLowerCase().replace('.', '');
-      const mimeType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+    // ── Image: Groq vision model ─────────────────────────────────────
+    if (IMAGE_EXTS.has(ext)) {
+      if (noKey) return '[Vision AI] Image report received — configure GROQ_API_KEY.';
+      const buf = await downloadBuffer(fileUrl);
+      const base64 = buf.toString('base64');
+      const mime = mimeType || (ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : `image/${ext.slice(1)}`);
 
       const response = await this.client.chat.completions.create({
         model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'You are a medical assistant. This is a medical report image. First extract all visible text and medical information from the image, then provide a concise patient-friendly summary (under 150 words) covering: diagnosis, key findings, test results, and recommended actions. Format: start with "SUMMARY:" followed by the summary.',
-              },
-              {
-                type: 'image_url',
-                image_url: { url: `data:${mimeType};base64,${base64}` },
-              },
-            ],
-          },
-        ],
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'You are a medical assistant. Extract all medical information from this report image, then write a patient-friendly summary under 150 words covering diagnosis, key findings, test results, and recommended actions. Start with "SUMMARY:" followed by the summary.',
+            },
+            { type: 'image_url', image_url: { url: `data:${mime};base64,${base64}` } },
+          ],
+        }],
         max_tokens: 500,
         temperature: 0.2,
       });
 
       const content = response.choices[0]?.message?.content || '';
-      const summaryMatch = content.match(/SUMMARY:\s*([\s\S]+)/i);
-      return summaryMatch ? summaryMatch[1].trim() : content.trim();
+      const match = content.match(/SUMMARY:\s*([\s\S]+)/i);
+      return match ? match[1].trim() : content.trim();
     }
 
-    // ── Text path: standard chat model ─────────────────────────────────
-    if (!extractedText?.trim()) return 'No content available for summarization.';
-    if (noKey) return `[Summary Preview] ${extractedText.slice(0, 200)}…`;
+    // ── Text/PDF: download and summarise ────────────────────────────
+    let text = '';
+    if (TEXT_EXTS.has(ext)) {
+      const buf = await downloadBuffer(fileUrl);
+      text = buf.toString('utf8');
+    }
+
+    if (!text.trim()) return 'No readable content found in this report.';
+    if (noKey) return `[Summary Preview] ${text.slice(0, 200)}…`;
 
     const response = await this.client.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',
-          content:
-            'You are a medical assistant. Summarize the following medical report in simple, patient-friendly language. Focus on diagnosis, key findings, and recommended actions. Keep it under 150 words.',
+          content: 'You are a medical assistant. Summarize the following medical report in simple, patient-friendly language. Focus on diagnosis, key findings, and recommended actions. Keep it under 150 words.',
         },
-        { role: 'user', content: extractedText },
+        { role: 'user', content: text },
       ],
       max_tokens: 300,
       temperature: 0.3,
